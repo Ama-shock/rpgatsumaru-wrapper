@@ -1,0 +1,13 @@
+# builds
+dist/
+*.zip
+
+# resources
+
+# development file
+.vscode
+package-lock.json
+*.map
+
+# Dependency directories
+node_modules/
