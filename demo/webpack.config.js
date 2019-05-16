@@ -1,7 +1,7 @@
 module.exports = {
     entry: './demo/app.ts',
     output: {
-      path: __dirname
+      path: __dirname +'/demo'
     },
     module: {
       rules: [
