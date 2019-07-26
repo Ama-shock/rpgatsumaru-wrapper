@@ -1,28 +1,17 @@
-import RPGAtsumaruLoader from './RPGAtsumaruLoader';
-import {CommentWrapper} from './CommentWrapper';
-import {VolumeWrapper} from './VolumeWrapper';
-import {StorageWrapper} from './StorageWrapper';
-import {QueryWrapper} from './QueryWrapper';
-import {UserWrapper} from './UserWrapper';
-import {SignalWrapper} from './SignalWrapper';
+import {Comment} from './Comment';
+import {Volume} from './Volume';
+import {Storage} from './Storage';
+import {Query} from './Query';
+import {User} from './User';
+import {Signal} from './Signal';
 
-const RPGAtsumaruWrapper = Object.freeze({
-    comment: new CommentWrapper(),
-    volume: new VolumeWrapper(),
-    storage: new StorageWrapper(),
-    query: new QueryWrapper(),
-    user: new UserWrapper(),
-    signal: new SignalWrapper()
+const RPGAtsumaru = Object.freeze({
+    //comment: new Comment(),
+    volume: new Volume(),
+    storage: new Storage(),
+    query: new Query(),
+    user: new User(),
+    signal: new Signal()
 });
 
-export {
-    RPGAtsumaruWrapper as default,
-    RPGAtsumaruLoader,
-    CommentWrapper,
-    VolumeWrapper,
-    StorageWrapper,
-    QueryWrapper,
-    UserWrapper,
-    SignalWrapper
-};
-
+export default RPGAtsumaru;

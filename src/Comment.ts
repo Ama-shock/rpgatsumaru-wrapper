@@ -1,4 +1,4 @@
-import Loader from './RPGAtsumaruLoader';
+import { Loader } from './RPGAtsumaruLoader';
 
 type CommentItem = {
     comment: string;
@@ -12,11 +12,16 @@ type CommentItem = {
     isMyPost: boolean;
 };
 
-export class CommentWrapper extends Loader{
+export class Comment {
     readonly gpos = new Gpos();
+    readonly ready = Promise.all([
+        this.init(),
+        Loader.loaded
+    ]);
+    
     protected async init(){
         this.autoUpdate = true;
-        await super.init();
+        await Loader.loaded;
         if(this.wrapper){
             this.wrapper.startUpdateLoop = ()=>{};
             const setup = this.wrapper.setup.bind(this.wrapper);
@@ -26,10 +31,9 @@ export class CommentWrapper extends Loader{
                 this.layer.onUpdated = (t: any)=>this.onUpdated(t);
             }
         }
-        await this.gpos.ready;
     }
     private get wrapper(){
-        return this.parent && (this.parent.comment as any)._commentPlayer;
+        return Loader.parent && (Loader.parent.comment as any)._commentPlayer;
     }
     private get player(){
         return this.wrapper && this.wrapper._player;
@@ -107,9 +111,9 @@ export class CommentWrapper extends Loader{
     }
 }
 
-export class Gpos extends Loader implements ProxyHandler<string[]>{
+export class Gpos implements ProxyHandler<string[]>{
     private get wrapper(){
-        return this.parent && (this.parent.comment as any)._commentPlayer;
+        return Loader.parent && (Loader.parent.comment as any)._commentPlayer;
     }
     private get player(){
         return this.wrapper && this.wrapper._player;

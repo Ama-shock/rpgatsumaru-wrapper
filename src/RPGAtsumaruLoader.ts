@@ -1,44 +1,82 @@
 import {RPGAtsumaruApi, Experimental} from '@atsumaru/api-types';
 
-export default class RPGAtsumaruLoader{
-    static readonly load = new Promise(r=>window.addEventListener('load', r, {once: true}));
-    static readonly parentLoad = new Promise(r=>window.parent.addEventListener('load', r, {once: true}));
+type RecursiveRequired<T> = Required<{
+    [K in keyof T]: Required<T[K]>;
+}>;
+type Api = RecursiveRequired<RPGAtsumaruApi & Experimental>;
 
-    protected get atsumaru(){
-        return window.RPGAtsumaru;
-    }
-    protected get parent(){
-        return window.parent.RPGAtsumaru;
-    }
-
-    readonly ready = this.init();
-    protected async init(){
-        await Promise.all([
-            RPGAtsumaruLoader.load,
-            RPGAtsumaruLoader.parentLoad
-        ]);
+export class Loader{
+    private constructor(){
+        throw new Error('Cannot construct Loader.');
     }
 
-    protected experimentalApi(api: keyof Experimental, prop: string){
-        if(!this.atsumaru) return null;
-        for(let exp of [this.atsumaru as Experimental, this.atsumaru.experimental]){
-            const a = exp && exp[api] as any;
-            if(!a) continue;
-            if(a[prop] instanceof Function) return a[prop].bind(a);
-            return a[prop];
+    static readonly loaded = new Promise(r=>window.addEventListener('load', r, {once: true}));
+
+    static readonly api = new Proxy({}, {
+        has: (tgt, key)=>{
+            const atsumaru = window.RPGAtsumaru;
+            if(!atsumaru) return false;
+            if(key in atsumaru) return true;
+            if(!atsumaru.experimental) return false;
+            return key in atsumaru.experimental;
+        },
+        get: (tgt, key: string)=>{
+            return Loader.passer(key);
+        },
+        set: (tgt, key, val)=>{
+            return false;
         }
-        return null;
+    }) as Api;
+    
+    private static passer(key: string){
+        return new Proxy({}, {
+            has: (tgt, method)=>{
+                const atsumaru = window.RPGAtsumaru;
+                if(!atsumaru) return false;
+                const api = atsumaru[key as keyof RPGAtsumaruApi] || {};
+                if(method in api) return true;
+
+                const exp = atsumaru.experimental && atsumaru.experimental[key as keyof Experimental] || {};
+                return method in exp;
+            },
+            get: (tgt, method: any)=>{
+                const atsumaru = window.RPGAtsumaru;
+                if(!atsumaru) return undefined;
+                const api = atsumaru[key as keyof RPGAtsumaruApi];
+                const exp = atsumaru.experimental && atsumaru.experimental[key as keyof Experimental];
+                const ins = (api && method in api) ? api : (exp && method in exp) ? exp : undefined;
+                if(!ins) return undefined;
+
+                const fn = ins[method as keyof typeof api] as Function;
+                return (typeof fn == 'function') ? fn.bind(ins) : fn;
+            },
+            set: (tgt, key, val)=>{
+                return false;
+            }
+        });
     }
 
     private static limitedApiPeriod = 0;
-    protected async waitLimitedApi(){
-        const period = RPGAtsumaruLoader.limitedApiPeriod;
+    static async waitLimitedApi(){
+        const period = Loader.limitedApiPeriod;
         const now = Date.now();
         if(period < now){
-            RPGAtsumaruLoader.limitedApiPeriod = now + 5000;
+            Loader.limitedApiPeriod = now + 5000;
             return;
         }
-        RPGAtsumaruLoader.limitedApiPeriod = period + 5000;
+        Loader.limitedApiPeriod = period + 5000;
         return new Promise<void>(r=>setTimeout(r, period - now));
+    }
+
+    static async enableInterPlayer(){
+        const p = this.api.interplayer;
+        return p && p.enable && p.enable();
+    }
+    
+    static get atsumaru(){
+        return window.RPGAtsumaru;
+    }
+    static get parent(){
+        return window.parent.RPGAtsumaru;
     }
 }
